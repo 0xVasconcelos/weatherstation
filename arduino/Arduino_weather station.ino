@@ -12,10 +12,8 @@
 #define MYNODE 30            //node ID of the receiever
 #define freq RF12_433MHZ     //frequency
 #define group 210            //network group
-
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE]; //buffer to hold incoming packet,
-
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = {  
@@ -28,7 +26,7 @@ EthernetUDP Udp;
 //IPAddress receiverIP(192, 168, 0, 195);
 IPAddress receiverIP(95, 85, 39, 222);
 unsigned int receiverPort = 6001; 
-unsigned int arduinoPort = 8888; 
+unsigned int arduinoPort = 8000; 
 
 //RF12 variables
 typedef struct {
@@ -47,25 +45,18 @@ int nullbat = 0;
 
 //  DHT22 
 DHT dht;
-//  SD
-const int chipSelect = 10; //SS for Arduino UNO
-
 
 void setup () {
-
   Serial.begin(9600);
   rf12_initialize(MYNODE, freq,group); // Initialise the RFM12B
-  dht.setup(7); // Analog 3= Digital 17
-  pinMode(10, OUTPUT); // For SD
-  pinMode(17, INPUT); 
+  dht.setup(7); 
 
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
-    // no point in carrying on, so do nothing forevermore:
     for(;;)
       ;
   }
-  // print your local IP address:
+
   Serial.print("My IP address: ");
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
     // print the value of each byte of the IP address:
@@ -73,36 +64,28 @@ void setup () {
     Serial.print("."); 
   }
 
-
-#ifdef AVR
-  Wire.begin();
-#else
-  Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
-#endif
-
-  Udp.begin(arduinoPort);  
-
+  #ifdef AVR
+    Wire.begin();
+  #else
+    Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
+  #endif
+    Udp.begin(arduinoPort);  
 }
 
 void loop() {
   getlocalvalues();
   getrf12b();
-
   delay(200);
 }
 
 
-
 void upload(String id, String type,int value){
-  //char  ReplyBuffer[] = "acknowledged"; 
+
   String ReplyBuffer = id +"#"+type+"#" +value;
   int length = ReplyBuffer.length() + 1;
   char dom [length];
-  Serial.print("cadena: ");
-  Serial.println(ReplyBuffer);
 
   ReplyBuffer.toCharArray(dom, length ) ;
-
   Udp.beginPacket(receiverIP, receiverPort); //start udp packet
   Udp.write(dom); //write sensor data to udp packet
   Udp.endPacket(); // end packet
@@ -118,14 +101,13 @@ void getlocalvalues(){
 void getrf12b(){
   //RFM12B reciving part
   if (rf12_recvDone() && rf12_crc == 0 && (rf12_hdr & RF12_HDR_CTL) == 0) {
-    Serial.println("<<<<<<<<<<<<<<<<<====================>>>>>>>>>>>>>>>>>>>>>>>");
+
     nodeID = rf12_hdr & 0x1F;  // get node ID
     rx = *(Payload*) rf12_data;
-
     int value = rx.rxD;
-    //  vout = rx.supplyV;
-    
+    int vout = rx.supplyV;  
     int hum = rx.data1;
+
     upload((String)nodeID,"H",(int)rx.rxD);
     upload((String)nodeID,"T",(int)rx.data1);
 
@@ -134,7 +116,6 @@ void getrf12b(){
     }
   }
 }
-
 
 int freeRam () {
   extern int __heap_start, *__brkval; 
