@@ -1,3 +1,4 @@
+//http://harizanov.com/2012/04/rfm12b-and-arduino-ethernet-with-wiznet5100-chip/
 #include <SPI.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
