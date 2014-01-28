@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Mi Meteo</title>
+    <title>Bootstrap 101 Template</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -17,9 +17,15 @@
 </head>
 
 <body>
-    <h1><p class="text-center"><span class="label label-primary">Mi Meteo</span></p></h1>
-    <br>
-    <br>
+    <h1><p class="text-center">Mi Meteo</p></h1>
+
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+            <p class="text-center">Meteo Data</p>
+        </div>
+        <div class="col-md-2"></div>
+    </div>
 
     <div class="row">
         <div class="col-md-3"></div>
@@ -30,8 +36,9 @@
                     <h3 class="panel-title">Temperatura Interior</h3>
                 </div>
                 <div class="panel-body " id="01T">
-                </div>
 
+                </div>
+                <div id="div_g" style="height:200px;"></div>
             </div>
         </div>
         <div class="col-md-3">
@@ -77,31 +84,57 @@
         <div class="col-md-3"></div>
     </div>
 
-
+    <div id="div_g" style="width:600px; height:300px;"></div>
     <script src="https://code.jquery.com/jquery.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/dygraph-combined.js"></script>
     <script>
-        //Host del servidor con socket.io
         var socket = io.connect('HOST:PUERTO');
+        var socket = io.connect('http://95.85.39.222:8000');
         var temperature = 0;
-
+        var Temp1 = 0;
+        var data = [];
         var sensorlist = new Array();
         var sensorvalues = new Array();
 
+        var t = new Date();
+        var x = new Date(t.getTime());
+        data.push([x, Temp1]);
+
+
+        var g = new Dygraph(document.getElementById("div_g"), data, {
+            drawPoints: true,
+            showRoller: true,
+            valueRange: [-3.0, 45],
+            labels: ['Time', 'Temperatura']
+        });
 
         socket.on('udp message', function (msg) {
-            console.log(msg);
+
             var entrada = msg.toString().split("#");
             var id = entrada[0].toUpperCase();
             var tipo = entrada[1];
             var valor = (entrada[2] / 100).toFixed(2);
 
+            if (tipo == 'T' && id == "01") {
+                Temp1 = valor;
+                console.log(data);
+                var x = new Date(); // current time
+                var y = Temp1;
+                data.push([x, y]);
+                g.updateOptions({
+                    'file': data
+                });
+
+            }
+
+
             if (tipo == 'T') {
-                valor = valor + "<small>" + String.fromCharCode(parseInt("00B0", 16)) + "C" + "</small>";
+                valor = valor + String.fromCharCode(parseInt("00B0", 16)) + "C";
             }
             if (tipo == 'H') {
-                valor = valor + "<small>" + "%" + "</small>";
+                valor = valor + "%";
             }
 
             var i = sensorlist.indexOf(id + tipo);
@@ -120,5 +153,4 @@
     </script>
 
 </body>
-
 </html>
