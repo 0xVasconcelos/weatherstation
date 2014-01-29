@@ -25,7 +25,7 @@ byte mac[] = {
 EthernetClient client;
 EthernetUDP Udp;
 //IPAddress receiverIP(192, 168, 0, 195);
-IPAddress receiverIP(95, 85, 39, 222);
+IPAddress receiverIP(IP); // Separada por comas: 172,0,0,1
 unsigned int receiverPort = 6001; 
 unsigned int arduinoPort = 8000; 
 
